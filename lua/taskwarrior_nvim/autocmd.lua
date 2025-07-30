@@ -28,7 +28,10 @@ M.run_task_watcher = function()
             cmd_cache[cwd] = path
             local err, task = task_config:get_task()
             if err then
+
+                vim.schedule(function()
               vim.notify(err, vim.log.levels.ERROR)
+            end)
             elseif not err and task then
               State:start_task(path, bufnr, task)
             end

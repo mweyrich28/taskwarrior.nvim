@@ -24,5 +24,6 @@ end
 
 M.browser = require("taskwarrior_nvim.telescope").browser
 M.go_to_config_file = require("taskwarrior_nvim.taskwarrior").go_to_config_file
+M.project = require("taskwarrior_nvim.project").project_picker
 
 return M
