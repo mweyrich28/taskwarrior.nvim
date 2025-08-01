@@ -210,12 +210,18 @@ M.browser = function(args)
                 local notes_dir = vim.fn.expand("~/documents/zettelkasten/todos")
                 local notes_file = notes_dir .. "/" .. uuid .. ".md"
 
-                -- Ensure directory exists
-                vim.fn.mkdir(notes_dir, "p")
+                if vim.fn.isdirectory(notes_dir) == 0 then
+                  vim.fn.mkdir(notes_dir, "p")
+                end
+
+                if vim.fn.filereadable(notes_file) == 0 then
+                  local header = "# " .. task.description
+                  vim.fn.writefile({ header, "" }, notes_file)
+                end
 
                 -- Open the file in a new split
                 vim.cmd("vsplit " .. vim.fn.fnameescape(notes_file))
-                vim.bo.filetype = "markdown"
+                vim.bo.filetype = "vimwiki"
                 vim.cmd("stopinsert")
                 vim.cmd("set nowrap")
 
@@ -224,6 +230,24 @@ M.browser = function(args)
                 vim.schedule(function()
                     vim.notify("Opened notes for task: " .. uuid, vim.log.levels.INFO)
                 end)
+            end)
+        end)
+        
+        map({ "i", "n" }, "<C-l>", function()
+            make_action(function(task)
+                local uuid = task.uuid
+                if not uuid then
+                    vim.schedule(function()
+                        vim.notify("Task has no UUID", vim.log.levels.ERROR)
+                    end)
+                    return
+                end
+
+                -- Path to your markdown notes
+                actions.close(prompt_bufnr)
+                local notes_dir = vim.fn.expand("../todos")
+                local notes_file = "[TODO](" .. notes_dir .. "/" .. uuid .. ".md)"
+                vim.api.nvim_put({notes_file}, "", false, true)
             end)
         end)
 
