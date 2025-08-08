@@ -49,35 +49,28 @@ M.browser = function(args)
     local displayer = entry_display.create({
         separator = "  ",
         items = {
-            { width = 3,       right_justify = true },
-            { width = 3 },
-            { width = 12,      right_justify = true },
-            { remaining = true },
+            { width = 2,       right_justify = true }, -- ID
+            { width = 1,       right_justify = true }, -- status
+            { width = 4 },                             -- project
+            { width = 12 },                             -- tags
+            { remaining = true },                      -- description
         },
     })
 
     ---@param task Task
     local make_display = function(task)
         ---@type string?
-        local elapsed_str
+        local status 
         if task.start_ then
-            local elapsed = taskwarrior.time_elapsed(task.start_)
-            if elapsed.days > 0 then
-                elapsed_str = elapsed.days .. "d " .. elapsed.hours .. "h " .. elapsed.hours .. "m"
-            elseif elapsed.hours > 0 then
-                elapsed_str = elapsed.hours .. "h" .. elapsed.hours .. "m"
-            elseif elapsed.minutes > 0 then
-                elapsed_str = elapsed.minutes .. "m"
-            elseif elapsed.seconds > 0 then
-                elapsed_str = elapsed.seconds .. "s"
-            elseif elapsed.seconds == 0 then
-                elapsed_str = "now"
-            end
+            status = ">"
         end
+        local project = task.project or ""
+        local tags = task.tags and table.concat(task.tags, ", ") or ""
         return displayer({
             { task.id,                         "TelescopeResultsNumber" },
-            { tostring(task.urgency):sub(0, 3) },
-            { elapsed_str or "" },
+            { status or "" },
+            { project },
+            { tags },
             { task.description },
         })
     end
@@ -211,12 +204,12 @@ M.browser = function(args)
                 local notes_file = notes_dir .. "/" .. uuid .. ".md"
 
                 if vim.fn.isdirectory(notes_dir) == 0 then
-                  vim.fn.mkdir(notes_dir, "p")
+                    vim.fn.mkdir(notes_dir, "p")
                 end
 
                 if vim.fn.filereadable(notes_file) == 0 then
-                  local header = "# " .. task.description
-                  vim.fn.writefile({ header, "" }, notes_file)
+                    local header = "# " .. task.description
+                    vim.fn.writefile({ header, "" }, notes_file)
                 end
 
                 -- Open the file in a new split
@@ -232,7 +225,7 @@ M.browser = function(args)
                 end)
             end)
         end)
-        
+
         map({ "i", "n" }, "<C-l>", function()
             make_action(function(task)
                 local uuid = task.uuid
@@ -246,8 +239,16 @@ M.browser = function(args)
                 -- Path to your markdown notes
                 actions.close(prompt_bufnr)
                 local notes_dir = vim.fn.expand("../todos")
-                local notes_file = "[TODO](" .. notes_dir .. "/" .. uuid .. ".md)"
-                vim.api.nvim_put({notes_file}, "", false, true)
+                local abs = vim.fn.expand("~/documents/zettelkasten/todos")
+                local abs_file = abs .. "/" .. uuid .. ".md"
+
+                if vim.fn.filereadable(abs_file) == 0 then
+                    local header = "# " .. task.description
+                    vim.fn.writefile({ header, "" }, abs_file)
+                end
+
+                local notes_file = "[" .. task.description .. "](" .. notes_dir .. "/" .. uuid .. ".md)"
+                vim.api.nvim_put({ notes_file }, "", false, true)
             end)
         end)
 
